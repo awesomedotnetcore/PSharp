@@ -844,17 +844,18 @@ namespace Microsoft.PSharp
                     // inform the user of a successful dequeue
                     // once ReceivedEvent is set
                     previouslyDequeuedEvent = nextEventInfo.Event;
-                    await this.OnProcessingBegin(previouslyDequeuedEvent);
+                    await this.OnEventDequeueAsync(previouslyDequeuedEvent);
                 }
 
                 // Handles next event.
                 await this.HandleEvent(nextEventInfo.Event);
 
-                if (this.RaisedEvent == null && !this.Info.IsHalted)
+                if (this.RaisedEvent == null && previouslyDequeuedEvent != null && !this.Info.IsHalted)
                 {
                     // inform the user that the machine is done processing.
                     // It will either go idle or dequeue its next message.
-                    await this.OnProcessingEnd(previouslyDequeuedEvent);
+                    await this.OnEventHandledAsync(previouslyDequeuedEvent);
+                    previouslyDequeuedEvent = null;
                 }
             }
 
@@ -1892,7 +1893,7 @@ namespace Microsoft.PSharp
         /// </summary>
         /// <param name="ev">The dequeued event</param>
         /// <returns></returns>
-        protected virtual Task OnProcessingBegin(Event ev)
+        protected virtual Task OnEventDequeueAsync(Event ev)
         {
             return Task.FromResult(true);
         }
@@ -1909,7 +1910,7 @@ namespace Microsoft.PSharp
         /// </summary>
         /// <param name="ev">The dequeued event whose processing has just finished</param>
         /// <returns></returns>
-        protected virtual Task OnProcessingEnd(Event ev)
+        protected virtual Task OnEventHandledAsync(Event ev)
         {
             return Task.FromResult(true);
         }
